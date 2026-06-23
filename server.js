@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const app = express();
 
+// ===== MIDDLEWARE =====
 app.use(express.json());
 
 app.use((req, res, next) => {
@@ -15,6 +16,7 @@ app.all('*', (req, res) => {
     const timestamp = new Date().toISOString();
     const url = req.url;
     
+    // Log the request
     fs.appendFileSync('requests.log', '[' + timestamp + '] IP: ' + ip + ' | URL: ' + url + '\n');
     
     res.json({
@@ -24,7 +26,28 @@ app.all('*', (req, res) => {
     });
 });
 
+// ===== KEEP-ALIVE PING =====
+app.get('/ping', (req, res) => {
+    res.send('pong');
+});
+
+// ===== LOGS VIEWER =====
+app.get('/logs', (req, res) => {
+    if (fs.existsSync('requests.log')) {
+        const logs = fs.readFileSync('requests.log', 'utf8');
+        res.send('<pre>' + logs + '</pre>');
+    } else {
+        res.send('No logs.');
+    }
+});
+
+// ===== PORT =====
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, function() {
     console.log('Server running on port ' + PORT);
 });
+
+// ===== KEEP ALIVE (prevents sleeping) =====
+setInterval(function() {
+    console.log('Server is alive - ' + new Date().toISOString());
+}, 60000); // logs every 60 seconds
